@@ -35,7 +35,7 @@ SubShader {
             {
                 ps_input o;
                 float3 worldPos = buf_Points[id];
-                o.color=buf_Colors[id];
+                o.color = buf_Colors[id];
                 o.pos = mul (UNITY_MATRIX_VP, float4(worldPos,1.0f));
 
                 return o;

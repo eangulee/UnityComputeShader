@@ -19,6 +19,16 @@ public class CBufferTest : MonoBehaviour
     //We initialize the buffers and the material used to draw.
     void Start()
     {
+        Debug.Log("CBufferTest!");
+        if (SystemInfo.supportsComputeShaders)
+            Debug.Log("support compute shader");
+        else
+            Debug.Log("unsupport compute shader");
+        Debug.Log("5!");
+        Debug.Log("4!");
+        Debug.Log("3!");
+        Debug.Log("2!");
+        Debug.Log("1!");
         CreateBuffers();
         CreateMaterial();
         _kernel = computeShader.FindKernel("CSMain");

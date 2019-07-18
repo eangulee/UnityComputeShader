@@ -30,16 +30,16 @@ RWStructuredBuffer<float3> color;
 //A simple sine modulation of the z coordinate, with an offset by a random value between 0 and 2PI
 float3 Wave(float3 p, int idx,uint3 id)
 {
-    p.x=cos(cBuffer[0].t+id.x);
-    p.y=sin(cBuffer[0].t+id.y);
+    p.x = cos(cBuffer[0].t+id.x);
+    p.y = sin(cBuffer[0].t+id.y);
     p.z = sin(cBuffer[0].t + offsets[idx].offset);
     return p;
 }
  float3 SetColor(float3 p,uint3 id)
  {
-    p.x=abs(sin(cBuffer[0].t+id.x));
-    p.y=abs(sin(cBuffer[0].t+id.y));
-    p.z=abs(sin(cBuffer[0].t+id.x+id.y));
+    p.x = abs(sin(cBuffer[0].t+id.x));
+    p.y = abs(sin(cBuffer[0].t+id.y));
+    p.z = abs(sin(cBuffer[0].t+id.x+id.y));
     return p;
  }
 //The kernel for this compute shader, each thread group contains a number of threads specified by numthreads(x,y,z)
@@ -53,6 +53,6 @@ void CSMain (uint3 id : SV_DispatchThreadID)
  
     float3 pos = float3(id.x*spacing, id.y*spacing, id.z*spacing);
     pos = Wave(pos, idx,id);
-    color[idx]=SetColor(pos,id);
+    color[idx] = SetColor(pos,id);
     output[idx].pos = pos;
 }

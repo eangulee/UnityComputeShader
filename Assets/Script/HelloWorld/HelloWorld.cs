@@ -18,13 +18,13 @@ public class HelloWorld : MonoBehaviour
         Data[] inputData = new Data[3];
         Data[] outputData = new Data[3];
 
-        print("輸入 --------------------------------------------");
+        Debug.Log("輸入 --------------------------------------------");
         for (int i = 0; i < inputData.Length; i++)
         {
             inputData[i].A = i * 3 + 1;
             inputData[i].B = i * 3 + 2;
             inputData[i].C = i * 3 + 3;
-            print(inputData[i].A + ", " + inputData[i].B + ", " + inputData[i].C);
+            Debug.Log(inputData[i].A + ", " + inputData[i].B + ", " + inputData[i].C);
         }
 
         // Data 有3個float，一個 float 有 4 Byte，所以 3 * 4 = 12
@@ -43,11 +43,11 @@ public class HelloWorld : MonoBehaviour
         outputbuffer.GetData(outputData);
 
 
-        print("輸出 --------------------------------------------");
+        Debug.Log("輸出 --------------------------------------------");
         // 打印結果
         for (int i = 0; i < outputData.Length; i++)
         {
-            print(outputData[i].A + ", " + outputData[i].B + ", " + outputData[i].C);
+            Debug.Log(outputData[i].A + ", " + outputData[i].B + ", " + outputData[i].C);
         }
 
         // 釋放
