@@ -1,0 +1,42 @@
+﻿///整个compute shader所做的工作就是开辟1023条线程，同步根据时间函数，随机计算1023个位置矩阵，这是同步进行的
+
+// Each #kernel tells which function to compile; you can have many kernels
+#pragma kernel CSMain
+
+// Create a RenderTexture with enableRandomWrite flag and set it
+// with cs.SetTexture
+RWStructuredBuffer<float4x4> matrixBuffer;//可读写buff
+RWStructuredBuffer<float> timeSliceBuffer;//可读写buff
+float _DeltaFlashSpeed;
+
+//随机函数
+inline float2 LocalRand(float2 seed)
+{
+	float dt = dot(seed, float2(78.233, 45.5432));// project seed on random constant vector   
+	seed *= dt;
+	return frac(sin(seed) * 5478.5453) * 2 - 1;// return only fractional part
+}
+
+///https://blog.csdn.net/a359877454/article/details/80275157
+///SV_GroupThreadID 表示该线程在该组内的位置 组内线程id
+///SV_GroupID 表示整个组所分配的位置 线程组id
+///SV_DispatchThreadID 表示该线程在所有组的线程中的位置 线程DispatchId 
+///DispatchThreadID = GroupID * 组内线程数 + ThreadId
+///SV_GroupIndex 表示该线程在该组内的索引
+///SM4.5 允许numthreads最多768条线程
+///SM5.0 允许numthreads最多1024条线程
+[numthreads(1023,1,1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+	timeSliceBuffer[id.x] += _DeltaFlashSpeed;
+	if (timeSliceBuffer[id.x] > 1){
+		timeSliceBuffer[id.x] = 0;
+		float4x4 mtx = matrixBuffer[id.x];
+		float2 seed = float2(mtx._m03, mtx._m13);//xy轴平移
+		seed = LocalRand(seed);//在(-1, 1)随机xy位置
+		mtx._m03 = seed.x;
+		mtx._m13 = seed.y;
+		matrixBuffer[id.x] = mtx;
+	}
+}
+
