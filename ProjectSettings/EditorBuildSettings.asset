@@ -5,10 +5,13 @@ EditorBuildSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 2
   m_Scenes:
-  - enabled: 1
+  - enabled: 0
     path: Assets/Scenes/GPUParticel.unity
     guid: 464ae1968ed30074585f4fa0e44a73a7
   - enabled: 0
     path: Assets/Scenes/HelloWorld.unity
     guid: 41c5cd9e7307a594abae791d3afa437a
+  - enabled: 1
+    path: Assets/Scenes/RainDemo.unity
+    guid: ed4ae425f4b2e1e4eb57bfced666de36
   m_configObjects: {}
