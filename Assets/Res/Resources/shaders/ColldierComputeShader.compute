@@ -2,14 +2,34 @@
 #define thread_group_size_x 1024
 #define thread_group_interval 1000//每组线程处理数据量
 
+struct AABB
+{
+    float3 aabbMin;
+    float3 aabbMax;
+};
+
 //CPU->GPU
 RWStructuredBuffer<float4> points;
+RWStructuredBuffer<AABB> aabbs;
 float4 box_min;
 float4 box_max;
 int size;
 //GPU->CPU
 RWStructuredBuffer<int> output;
 
+//判断两个包围盒是否碰撞
+int Intersects(float3 aabbMin, float3 aabbMax)
+{
+    if(((box_min.x >= aabbMin.x && box_min.x <= aabbMax.x) || (aabbMin.x >= box_min.x && aabbMin.x <= box_max.x)) &&
+               ((box_min.y >= aabbMin.y && box_min.y <= aabbMax.y) || (aabbMin.y >= box_min.y && aabbMin.y <= box_max.y)) &&
+               ((box_min.z >= aabbMin.z && box_min.z <= aabbMax.z) || (aabbMin.z >= box_min.z && aabbMin.z <= box_max.z)))
+               {
+                    return 1;
+               }
+    return 0;
+}
+
+//判断点是否在包围盒内部
 int ContainsPoint(float4 p)
 {
     if (p.x < box_min.x) return 0;
@@ -28,8 +48,11 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     int end = start + thread_group_interval;
     for(int i = start; i < end && i < size; i++)
     {
-        float4 p = points[i];
-        int r = ContainsPoint(p);
+        // float4 p = points[i];
+        // int r = ContainsPoint(p);
+
+        AABB aabb = aabbs[i];
+        int r = Intersects(aabb.aabbMin,aabb.aabbMax);
         output[i] = r;
     }
 }
