@@ -1,0 +1,35 @@
+﻿#pragma kernel CSMain
+#define thread_group_size_x 1024
+#define thread_group_interval 1000//每组线程处理数据量
+
+//CPU->GPU
+RWStructuredBuffer<float4> points;
+float4 box_min;
+float4 box_max;
+int size;
+//GPU->CPU
+RWStructuredBuffer<int> output;
+
+int ContainsPoint(float4 p)
+{
+    if (p.x < box_min.x) return 0;
+    if (p.y < box_min.y) return 0;
+    if (p.z < box_min.z) return 0;
+    if (p.x > box_max.x) return 0;
+    if (p.y > box_max.y) return 0;
+    if (p.z > box_max.z) return 0;
+    return 1;
+}
+
+[numthreads(thread_group_size_x, 1, 1)]
+void CSMain (uint3 id : SV_DispatchThreadID)
+{
+    int start = id.x * thread_group_interval;
+    int end = start + thread_group_interval;
+    for(int i = start; i < end && i < size; i++)
+    {
+        float4 p = points[i];
+        int r = ContainsPoint(p);
+        output[i] = r;
+    }
+}

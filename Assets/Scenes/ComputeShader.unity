@@ -242,7 +242,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   shader: {fileID: 7200000, guid: 177c28b5a24151744883c5933341c6c3, type: 3}
   mat: {fileID: 2100000, guid: 5196eb9754b5ebd4a8d0c8b9c0352004, type: 2}
-  mesh: {fileID: 10207, guid: 0000000000000000e000000000000000, type: 0}
+  mesh: {fileID: 10209, guid: 0000000000000000e000000000000000, type: 0}
   xMod: 1
   yMod: 1
   zMod: 1
