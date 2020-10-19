@@ -48,11 +48,11 @@ void CSMain (uint3 id : SV_DispatchThreadID)
     int end = start + thread_group_interval;
     for(int i = start; i < end && i < size; i++)
     {
-        // float4 p = points[i];
-        // int r = ContainsPoint(p);
+        float4 p = points[i];
+        int r = ContainsPoint(p);
 
-        AABB aabb = aabbs[i];
-        int r = Intersects(aabb.aabbMin,aabb.aabbMax);
+        // AABB aabb = aabbs[i];
+        // int r = Intersects(aabb.aabbMin,aabb.aabbMax);
         output[i] = r;
     }
 }

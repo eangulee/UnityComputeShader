@@ -1,5 +1,8 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
 public struct AABB
@@ -11,6 +14,54 @@ public struct AABB
     {
         this.aabbMin = min;
         this.aabbMax = max;
+    }
+}
+
+// Job adding two floating point values together
+public struct AABBJob : IJob
+{
+    public Vector3 min;//aabb最小坐标
+    public Vector3 max;//aabb最大坐标
+    public NativeArray<Vector4> points;
+    //public NativeArray<AABB> aabbs;
+    public NativeArray<int> result;
+
+    public void Execute()
+    {
+        //for (int i = 0, length = aabbs.Length; i < length; i++)
+        //{
+        //    AABB aabb = aabbs[i];
+        //    result[i] = Intersects(aabb.aabbMin, aabb.aabbMax) ? 1 : 0;
+        //}
+        for (int i = 0, length = points.Length; i < length; i++)
+        {
+            result[i] = ContainsPoint(points[i]) ? 1 : 0;
+        }
+    }
+
+    //判断两个包围盒是否碰撞
+    private bool Intersects(Vector3 pointMin, Vector3 pointMax)
+    {
+        //就是各轴 互相是否包含，（aabb 包含  当前包围盒）||  （当前的包围盒 包含 aabb）
+        return ((min.x >= pointMin.x && min.x <= pointMax.x) || (pointMin.x >= min.x && pointMin.x <= max.x)) &&
+               ((min.y >= pointMin.y && min.y <= pointMax.y) || (pointMin.y >= min.y && pointMin.y <= max.y)) &&
+               ((min.z >= pointMin.z && min.z <= pointMax.z) || (pointMin.z >= min.z && pointMin.z <= max.z));
+    }
+
+    /// <summary>
+    /// 判断点是否在包围盒内部
+    /// </summary>
+    /// <param name="point"></param>
+    /// <returns></returns>
+    private bool ContainsPoint(Vector3 point)
+    {
+        if (point.x < min.x) return false;
+        if (point.y < min.y) return false;
+        if (point.z < min.z) return false;
+        if (point.x > max.x) return false;
+        if (point.y > max.y) return false;
+        if (point.z > max.z) return false;
+        return true;
     }
 }
 
@@ -31,8 +82,14 @@ public class ColliderDemo : MonoBehaviour
     ComputeBuffer pointsBuffer;//GPU输入坐标buffer
     ComputeBuffer aabbsBuffer;//GPU输入坐标buffer
     ComputeBuffer output;//输出GPU data buffer
+    NativeArray<AABB> aabbArray;
+    NativeArray<Vector4> pointArray;
+    NativeArray<int> rs;
     void Start()
     {
+        rs = new NativeArray<int>(count, Allocator.TempJob);
+        pointArray = new NativeArray<Vector4>(count, Allocator.TempJob);
+        aabbArray = new NativeArray<AABB>(count, Allocator.TempJob);
         aabbs = new AABB[count];
         result = new int[count];
         centers = new Vector4[count];
@@ -53,7 +110,7 @@ public class ColliderDemo : MonoBehaviour
             centers[i] = go.transform.position;
         }
         pointsBuffer = new ComputeBuffer(count, 16); //16 = 4 x sizof(float) = 4x4 = 16
-        aabbsBuffer = new ComputeBuffer(count, 24); //count是GPU data的个数，24是每个data的大小，32 = 2 x 3 x sizof(float) = 2x3x4 = 24
+        aabbsBuffer = new ComputeBuffer(count, Marshal.SizeOf(typeof(AABB)), ComputeBufferType.Default); //count是GPU data的个数，24是每个data的大小，32 = 2 x 3 x sizof(float) = 2x3x4 = 24
         output = new ComputeBuffer(count, 16);//count是GPU data的个数，16是每个data的大小，16 = 4 x sizof(float) = 4x4 = 16
         _kernel = computeShader.FindKernel("CSMain");//获取核函数
     }
@@ -63,10 +120,9 @@ public class ColliderDemo : MonoBehaviour
         max = maxTrans.position;
         min = minTrans.position;
 
-        Intersects();
+        //Intersects();
 
-        //ContainsPoint();
-
+        ContainsPoint();
 
         for (int i = 0, length = result.Length; i < length; i++)
         {
@@ -91,6 +147,21 @@ public class ColliderDemo : MonoBehaviour
         }
         ProfilerSample.EndSample();
 
+        //ProfilerSample.BeginSample("IntersectsJobSystem");
+        //// Create a native array of a single float to store the result. This example waits for the job to complete for illustration purposes
+        //AABBJob job = new AABBJob();
+        //job.max = max;
+        //job.min = min;
+        //aabbArray.CopyFrom(aabbs);
+        //job.aabbs = aabbArray;
+        //job.result = rs;
+        //// Schedule the job
+        //JobHandle handle = job.Schedule();
+        //// Wait for the job to complete
+        //handle.Complete();
+        //rs.CopyTo(result);
+        //ProfilerSample.EndSample();
+
         ProfilerSample.BeginSample("IntersectsComputeShader");
         computeShader.SetVector(Shader.PropertyToID("box_min"), min);//cpu->gpu
         computeShader.SetVector(Shader.PropertyToID("box_max"), max);//cpu->gpu
@@ -113,6 +184,21 @@ public class ColliderDemo : MonoBehaviour
         }
         ProfilerSample.EndSample();
 
+        ProfilerSample.BeginSample("ContainsPointJobSystem");
+        // Create a native array of a single float to store the result. This example waits for the job to complete for illustration purposes
+        AABBJob job = new AABBJob();
+        job.max = max;
+        job.min = min;
+        pointArray.CopyFrom(centers);
+        job.points = pointArray;
+        job.result = rs;
+        // Schedule the job
+        JobHandle handle = job.Schedule();
+        // Wait for the job to complete
+        handle.Complete();
+        rs.CopyTo(result);
+        ProfilerSample.EndSample();
+
         ProfilerSample.BeginSample("ContainsPointComputeShader");
         computeShader.SetVector(Shader.PropertyToID("box_min"), min);//cpu->gpu
         computeShader.SetVector(Shader.PropertyToID("box_max"), max);//cpu->gpu
@@ -128,6 +214,9 @@ public class ColliderDemo : MonoBehaviour
 
     private void OnDestroy()
     {
+        rs.Dispose();
+        aabbArray.Dispose();
+        pointArray.Dispose();
         aabbsBuffer.Dispose();
         pointsBuffer.Dispose();
         output.Dispose();
